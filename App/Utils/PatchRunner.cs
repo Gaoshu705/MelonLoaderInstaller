@@ -233,7 +233,7 @@ public static class PatchRunner
             JObject baseJson = JObject.Parse(releaseInfo);
             JToken asset = baseJson["assets"]!
                 .First(a => a["name"]!.ToString().StartsWith("melon_data"));
-            string assetUrl = asset["browser_download_url"]!.ToString();
+            string assetUrl = "https://proxy.ehre.top/proxy/" + asset["browser_download_url"]!.ToString().Replace("https://", string.Empty);
 
             _logger?.Log($"Downloading [ {assetUrl} ]");
             byte[] data = await client.GetByteArrayAsync(assetUrl);
