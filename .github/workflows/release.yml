@@ -29,15 +29,8 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Android keystore 需要手动提供，如果仓库中有 keystore 文件，直接使用；否则从 secret 中解码
-      - name: Decode Android Keystore
-        if: env.LEMON_KEYSTORE_BASE64 != ''
-        run: |
-          echo "$env:LEMON_KEYSTORE_BASE64" > keystore.b64
-          certutil -decode keystore.b64 App\meloninstaller.keystore
-          Remove-Item keystore.b64
-        env:
-          LEMON_KEYSTORE_BASE64: ${{ secrets.LEMON_KEYSTORE_BASE64 }}
+      - name: Install Android workload
+        run: dotnet workload install android
 
       - name: Restore dependencies
         run: dotnet restore MelonLoader.Installer.sln
@@ -59,7 +52,7 @@ jobs:
             -c Release `
             -o publish\android
         env:
-          LEMON_KEYSTORE_PASS: ${{ secrets.LEMON_KEYSTORE_PASS }}
+          LEMON_KEYSTORE_PASS: MelonLoaderInstaller
 
       - name: Zip Windows build
         run: Compress-Archive -Path publish\windows\* -DestinationPath MelonLoaderInstaller-Windows.zip
