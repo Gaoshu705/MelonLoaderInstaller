@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # Android keystore 需要手动提供，如果仓库中有 keystore 文件，直接使用；否则从 secret 中解码
+      - name: Decode Android Keystore
+        if: env.LEMON_KEYSTORE_BASE64 != ''
+        run: |
+          echo "$env:LEMON_KEYSTORE_BASE64" > keystore.b64
+          certutil -decode keystore.b64 App\meloninstaller.keystore
+          Remove-Item keystore.b64
+        env:
+          LEMON_KEYSTORE_BASE64: ${{ secrets.LEMON_KEYSTORE_BASE64 }}
+
+      - name: Restore dependencies
+        run: dotnet restore MelonLoader.Installer.sln
+
+      - name: Build Windows
+        run: |
+          dotnet publish App\MelonLoader.Installer.App.csproj `
+            -f net8.0-windows10.0.19041.0 `
+            -c Release `
+            -p:RuntimeIdentifierOverride=win-x64 `
+            -p:WindowsPackageType=None `
+            --self-contained false `
+            -o publish\windows
+
+      - name: Build Android
+        run: |
+          dotnet publish App\MelonLoader.Installer.App.csproj `
+            -f net8.0-android `
+            -c Release `
+            -o publish\android
+        env:
+          LEMON_KEYSTORE_PASS: ${{ secrets.LEMON_KEYSTORE_PASS }}
+
+      - name: Zip Windows build
+        run: Compress-Archive -Path publish\windows\* -DestinationPath MelonLoaderInstaller-Windows.zip
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            MelonLoaderInstaller-Windows.zip
+            publish/android/*.apk
+
+  create-draft-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+
+      - name: Generate tag name
+        id: tag
+        run: |
+          echo "tag=v$(date +'%Y.%m.%d')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*.zip,*.apk"
+          tag: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
+          draft: true
+          generateReleaseNotes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
