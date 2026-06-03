@@ -229,7 +229,7 @@ public static class PatchRunner
             using HttpClient client = new();
             client.DefaultRequestHeaders.Add("User-Agent", "MelonLoaderInstaller/1.0");
 
-            string releaseInfo = await client.GetStringAsync("https://api.github.com/repos/LemonLoader/MelonLoader/releases/latest");
+            string releaseInfo = await client.GetStringAsync("https://proxy.ehre.top/proxy/api.github.com/repos/LemonLoader/MelonLoader/releases/latest");
             JObject baseJson = JObject.Parse(releaseInfo);
             JToken asset = baseJson["assets"]!
                 .First(a => a["name"]!.ToString().StartsWith("melon_data"));
