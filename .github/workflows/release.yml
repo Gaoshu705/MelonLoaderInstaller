@@ -76,13 +76,15 @@ jobs:
           name: release-artifacts
           path: |
             MelonLoaderInstaller-Windows.zip
-            publish/android/*.apk
+            publish/android/**/*.apk
 
   create-draft-release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Download artifacts
@@ -98,7 +100,7 @@ jobs:
       - name: Create Draft Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.zip,*.apk"
+          artifacts: "*.zip,publish/android/*.apk"
           tag: ${{ steps.tag.outputs.tag }}
           name: Release ${{ steps.tag.outputs.tag }}
           draft: true
