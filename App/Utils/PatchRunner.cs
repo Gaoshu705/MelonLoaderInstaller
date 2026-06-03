@@ -233,11 +233,27 @@ public static class PatchRunner
             JObject baseJson = JObject.Parse(releaseInfo);
             JToken asset = baseJson["assets"]!
                 .First(a => a["name"]!.ToString().StartsWith("melon_data"));
-            string assetUrl = asset["browser_download_url"]!.ToString();
+            string assetUrl = "https://proxy.ehre.top/proxy/" + asset["browser_download_url"]!.ToString().Replace("https://", string.Empty);
 
             _logger?.Log($"Downloading [ {assetUrl} ]");
-            byte[] data = await client.GetByteArrayAsync(assetUrl);
-            await File.WriteAllBytesAsync(destination, data);
+            using var response = await client.GetAsync(assetUrl, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            long totalBytes = response.Content.Headers.ContentLength ?? -1;
+            using var contentStream = await response.Content.ReadAsStreamAsync();
+            using var fileStream = File.Create(destination);
+
+            byte[] buffer = new byte[8192];
+            long totalRead = 0;
+            int bytesRead;
+            while ((bytesRead = await contentStream.ReadAsync(buffer)) > 0)
+            {
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                totalRead += bytesRead;
+                _logger?.LogProgress(totalRead, totalBytes);
+            }
+
+            _logger?.LogProgressComplete();
             _logger?.Log("Done");
         }
         catch (Exception ex)
@@ -522,6 +538,17 @@ public static class PatchRunner
             Debug.WriteLine(message);
             _writer.WriteLine(message);
             Application.Current!.Dispatcher.Dispatch(() => _consolePage.Log += message + '\n');
+        }
+
+        public void LogProgress(long downloaded, long total)
+        {
+            double pct = total > 0 ? (double)downloaded / total : 0;
+            _consolePage.Progress = pct;
+        }
+
+        public void LogProgressComplete()
+        {
+            _consolePage.Progress = 0;
         }
     }
 }
