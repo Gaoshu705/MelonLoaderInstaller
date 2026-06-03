@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net8.0-android</TargetFrameworks>
@@ -131,6 +131,6 @@
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'android'">
-	  <Exec Command="XCOPY &quot;$(SolutionDir)Resources\WindowsResources&quot; &quot;$(TargetDir)\Resources\&quot; /S /Y" />
+	  <Exec Command="XCOPY &quot;$(MSBuildProjectDirectory)\..\Resources\WindowsResources&quot; &quot;$(TargetDir)\Resources\&quot; /S /Y" />
 	</Target>
 </Project>
