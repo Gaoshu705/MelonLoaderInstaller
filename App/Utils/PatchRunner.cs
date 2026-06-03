@@ -250,7 +250,7 @@ public static class PatchRunner
             {
                 await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                 totalRead += bytesRead;
-                _logger?.LogProgress(totalRead, totalBytes);
+                _logger?.LogProgress("Downloading MelonLoader data", totalRead, totalBytes);
             }
 
             _logger?.LogProgressComplete();
@@ -540,15 +540,17 @@ public static class PatchRunner
             Application.Current!.Dispatcher.Dispatch(() => _consolePage.Log += message + '\n');
         }
 
-        public void LogProgress(long downloaded, long total)
+        public void LogProgress(string description, long downloaded, long total)
         {
             double pct = total > 0 ? (double)downloaded / total : 0;
             _consolePage.Progress = pct;
+            _consolePage.ProgressDescription = description;
         }
 
         public void LogProgressComplete()
         {
             _consolePage.Progress = 0;
+            _consolePage.ProgressDescription = "";
         }
     }
 }

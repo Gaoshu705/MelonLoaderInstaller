@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
@@ -38,19 +38,34 @@ internal class DownloadUnityDeps : IPatchStep
             ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(delegate { return true; });
 
             string url = patcher.Args.UnityVersion.Value.Type == AssetRipper.Primitives.UnityVersionType.China ? CHINA_LIBUNITY_URL_TEMPLATE : LIBUNITY_URL_TEMPLATE;
+            string formattedUrl = string.Format(url, unityVersion, "arm64-v8a");
 
-            Task<byte[]> task = client.GetByteArrayAsync(string.Format(url, unityVersion, "arm64-v8a"));
-            task.Wait();
+            using var response = client.GetAsync(formattedUrl, HttpCompletionOption.ResponseHeadersRead).Result;
+            response.EnsureSuccessStatusCode();
 
+            long totalBytes = response.Content.Headers.ContentLength ?? -1;
             string libDir = Path.Combine(patcher.Info.UnityNativeDirectory, "arm64-v8a");
             if (!Directory.Exists(libDir))
                 Directory.CreateDirectory(libDir);
 
-            File.WriteAllBytes(Path.Combine(libDir, "libunity.so"), task.Result);
+            using var contentStream = response.Content.ReadAsStreamAsync().Result;
+            using var fileStream = File.Create(Path.Combine(libDir, "libunity.so"));
+
+            byte[] buffer = new byte[8192];
+            long totalRead = 0;
+            int bytesRead;
+            while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                fileStream.Write(buffer, 0, bytesRead);
+                totalRead += bytesRead;
+                patcher.Logger.LogProgress("Downloading Unity dependencies", totalRead, totalBytes);
+            }
+
+            patcher.Logger.LogProgressComplete();
 
             ServicePointManager.ServerCertificateValidationCallback = originalValidator;
         }
-        catch (WebException ex)
+        catch (Exception ex)
         {
             patcher.Logger.Log("Failed to download Unity dependencies. You may need to generate them manually.\n" + ex.ToString());
             return false;

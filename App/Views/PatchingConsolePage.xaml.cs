@@ -20,6 +20,12 @@ public partial class PatchingConsolePage : ContentPage
         set => Application.Current!.Dispatcher.Dispatch(() => DownloadProgressBar.Progress = value);
     }
 
+    public string ProgressDescription
+    {
+        get => ProgressLabel.Text;
+        set => Application.Current!.Dispatcher.Dispatch(() => ProgressLabel.Text = value);
+    }
+
     public string TopTitle
     {
         get => TitleLabel.Text;
