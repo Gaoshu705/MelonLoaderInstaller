@@ -10,8 +10,8 @@ namespace MelonLoader.Installer.Core.PatchSteps;
 
 internal class DownloadUnityDeps : IPatchStep
 {
-    private const string LIBUNITY_URL_TEMPLATE = "https://proxy.ehre.top/proxy/github.com/LavaGang/MelonLoader.UnityDependencies/releases/download/{0}/libunity.so.{1}";
-    private const string CHINA_LIBUNITY_URL_TEMPLATE = "https://proxy.ehre.top/proxy/github.com/LavaGang/MelonLoader.UnityDependencies.China/releases/download/{0}/libunity.so.{1}";
+    private const string LIBUNITY_URL_TEMPLATE = "https://v4.gh-proxy.org/https://github.com/LavaGang/MelonLoader.UnityDependencies/releases/download/{0}/libunity.so.{1}";
+    private const string CHINA_LIBUNITY_URL_TEMPLATE = "https://v4.gh-proxy.org/https://github.com/LavaGang/MelonLoader.UnityDependencies.China/releases/download/{0}/libunity.so.{1}";
 
     public bool Run(Patcher patcher)
     {
